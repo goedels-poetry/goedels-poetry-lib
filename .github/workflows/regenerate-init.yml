@@ -1,0 +1,21 @@
+
+name: Regenerate Init.lean
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: scripts/regenerate_init.py
+      - run: |
+          git config user.name "init-bot"
+          git config user.email "init-bot@users.noreply.github.com"
+          git add GoedelsPoetryLib/**/Init.lean
+          git commit -m "chore: regenerate Init.lean files" || exit 0
+          git push

@@ -1,0 +1,13 @@
+# Lean 4 build artifacts
+/.lake/
+/build/
+/lake-packages/
+/lake-manifest.json
+*.olean
+*.log
+
+# Elan toolchain
+/.elan/
+
+# OS files
+.DS_Store

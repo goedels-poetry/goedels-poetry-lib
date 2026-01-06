@@ -1,0 +1,57 @@
+
+name: Retry Dead PRs
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const maxRetries = 5;
+            const baseDelayMinutes = 5;
+            const now = Date.now();
+
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open"
+            });
+
+            for (const pr of prs.data) {
+              const retryLabel = pr.labels.find(l => l.name.startsWith("retry/"));
+              if (!retryLabel) continue;
+
+              const count = parseInt(retryLabel.name.split("/")[1]);
+              if (count >= maxRetries) continue;
+
+              const delay = baseDelayMinutes * Math.pow(2, count - 1) * 60 * 1000;
+              const updated = new Date(pr.updated_at).getTime();
+
+              if (now - updated >= delay) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: retryLabel.name
+                });
+
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: [`retry/${count + 1}`]
+                });
+
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: "open"
+                });
+              }
+            }

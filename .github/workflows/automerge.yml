@@ -1,0 +1,102 @@
+
+name: CI and Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install elan
+        uses: leanprover/elan-action@v1
+
+      - name: Lake build
+        run: lake build
+
+      - name: Lake build tests
+        run: lake build Tests
+
+      - name: Fetch origin/main for append-only check
+        run: git fetch origin main
+
+      - name: Append-only check
+        run: bash scripts/check_append_only.sh
+
+      - name: Regenerate init files
+        run: python3 scripts/regenerate_init.py
+
+      - name: Commit regenerated init files if changed
+        # We run regenerate_init.py during PR validation (not post-merge) so that:
+        # 1. The Init.lean files are part of the PR being validated
+        # 2. The build can verify the generated Init.lean files compile correctly
+        # 3. All changes are committed together in the PR
+        # 4. If push fails, the PR fails (preventing invalid repository state)
+        run: |
+          if ! git diff --quiet GoedelsPoetryLib/**/Init.lean 2>/dev/null; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add GoedelsPoetryLib/**/Init.lean
+            git commit -m "chore: regenerate Init.lean files"
+            # If push fails, fail the build to prevent merging an invalid state
+            # (theorem added without Init.lean update)
+            git push || (echo "ERROR: Failed to push Init.lean changes. PR cannot merge in invalid state." && exit 1)
+          fi
+
+      - name: Validate regenerated Init.lean files compile
+        # Rebuild after Init.lean regeneration to ensure generated files are valid
+        run: |
+          lake build
+          lake build Tests
+
+      - name: Ensure working tree clean (excluding Init.lean files)
+        run: |
+          # Allow Init.lean changes, but check for any other unexpected changes
+          git diff --name-only | grep -v "Init.lean$" | grep -q . && exit 1 || exit 0
+
+  automerge:
+    # This job depends on the build job completing successfully.
+    # If the build job fails, this job will not run (due to needs: build).
+    needs: build
+    if: github.event.pull_request.user.type == 'Bot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // mergeable_state === 'clean' means GitHub considers the PR mergeable,
+            // but this doesn't explicitly verify that required status checks passed.
+            // 
+            // Safety mechanisms:
+            // 1. The 'needs: build' dependency ensures this job only runs if build succeeded
+            // 2. GitHub branch protection should be configured to require the 'build' check
+            //    to pass before allowing merges. This provides an additional safety layer.
+            //
+            // If branch protection is not configured, consider adding an explicit check:
+            // const checks = await github.rest.checks.listForRef({
+            //   owner: context.repo.owner,
+            //   repo: context.repo.repo,
+            //   ref: pr.head.sha
+            // });
+            // const buildCheck = checks.data.check_runs.find(c => c.name === 'build');
+            // if (buildCheck?.conclusion !== 'success') { ... }
+            
+            if (pr.mergeable_state === 'clean') {
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                merge_method: "squash"
+              });
+            } else {
+              console.log(`PR ${pr.number} not mergeable. State: ${pr.mergeable_state}`);
+            }
