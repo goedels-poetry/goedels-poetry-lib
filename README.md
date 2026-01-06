@@ -38,13 +38,16 @@ Theorems are organized by category in subdirectories under `GoedelsPoetryLib/`:
 New theorems are added via automated PRs from the external proof generation system. The process:
 1. A theorem is proven by an LLM-based prover
 2. A PR is created from a branch (not a fork) with a new `.lean` file containing the theorem
-3. CI validates the build and append-only policy
-4. CI runs `regenerate_init.py` to update subdirectory `Init.lean` files and commits them to the PR branch
-5. If the `Init.lean` commit/push fails, the PR will fail validation (ensuring the repository remains in a valid state)
-6. CI validates that the regenerated `Init.lean` files compile correctly
-7. If all CI checks pass, the PR is automatically merged
+3. CI performs security validations (branch name, file paths, critical file protection, one file per PR)
+4. CI validates the build and append-only policy
+5. CI runs `regenerate_init.py` to update subdirectory `Init.lean` files and commits them to the PR branch
+6. If the `Init.lean` commit/push fails, the PR will fail validation (ensuring the repository remains in a valid state)
+7. CI validates that the regenerated `Init.lean` files compile correctly
+8. If all CI checks pass, the PR is automatically merged
 
 **Important**: The CI workflow requires write permissions to push `Init.lean` changes back to the PR branch. Since PRs come from branches (not forks) created by the CLI, these permissions are available. If the push fails for any reason, the PR will not merge, preventing an invalid repository state.
+
+**Security**: CI performs multiple security validations including branch name patterns, file path restrictions, critical file protection, and one-file-per-PR enforcement. See [CONTRIBUTING.md](CONTRIBUTING.md) for complete details on all validation steps.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
