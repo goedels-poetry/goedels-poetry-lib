@@ -8,19 +8,19 @@ if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
   exit 1
 fi
 
-# Check for deleted files (append-only policy violation)
+# Check for deleted or renamed-away files (append-only policy violation)
 # Use set +e temporarily to capture git diff exit code before piping
 set +e
-git_diff_output=$(git diff --name-only --diff-filter=D origin/main -- "*.lean" 2>/dev/null)
+git_diff_output=$(git diff --name-only --diff-filter=DR origin/main -- "*.lean" 2>/dev/null)
 git_diff_exit=$?
 set -e
 if [ $git_diff_exit -ne 0 ]; then
-  echo "ERROR: Failed to check for deleted files"
+  echo "ERROR: Failed to check for deleted/renamed files"
   exit 1
 fi
 deleted_files=$(echo "$git_diff_output" | grep -v "Init.lean$" | grep -v "^GoedelsPoetryLib\\.lean$" | grep -v "^Tests\\.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || true)
 if [ -n "$deleted_files" ]; then
-  echo "ERROR: deleted theorem files detected:"
+  echo "ERROR: deleted or renamed-away theorem files detected:"
   echo "$deleted_files"
   exit 1
 fi
@@ -42,14 +42,14 @@ if [ -n "$modified_files" ]; then
   exit 1
 fi
 
-# Check for added files that would overwrite existing files
+# Check for added files (including renames-to) that would overwrite existing files
 # Use set +e temporarily to capture git diff exit code before piping
 set +e
-git_diff_output=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null)
+git_diff_output=$(git diff --name-only --diff-filter=AR origin/main -- "*.lean" 2>/dev/null)
 git_diff_exit=$?
 set -e
 if [ $git_diff_exit -ne 0 ]; then
-  echo "ERROR: Failed to check for added files"
+  echo "ERROR: Failed to check for added/renamed files"
   exit 1
 fi
 added_files=$(echo "$git_diff_output" | grep -v "Init.lean$" | grep -v "^GoedelsPoetryLib\\.lean$" | grep -v "^Tests\\.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || true)
