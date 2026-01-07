@@ -16,7 +16,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install elan
-        uses: leanprover/elan-action@v1
+        uses: leanprover/lean-action@v1
+        with:
+          build: false
 
       - name: Validate branch name
         # Only enforce branch name pattern when adding theorem files

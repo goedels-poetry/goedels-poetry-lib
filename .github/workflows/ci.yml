@@ -10,7 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: leanprover/lean-action@v1
         with:
-          lake-build: true
-      - run: scripts/check_append_only.sh
+          build: true
+      - name: Append-only check (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main
+          bash scripts/check_append_only.sh
