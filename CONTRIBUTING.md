@@ -66,13 +66,13 @@ The root `GoedelsPoetryLib/Init.lean` file is **manually maintained**. It:
 When a PR is created, the following security and validation checks are performed:
 
 1. **Branch name validation**: Branch name must start with `add-theorem-` when adding theorem files
-   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`)
+   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`, root infrastructure entrypoints `GoedelsPoetryLib.lean` and `Tests.lean`, and `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
    - Maintenance/workflow changes can use any branch name
    - Prevents arbitrary branch names for theorem additions
    - Ensures branches follow expected naming convention for automated PRs
 
 2. **File path validation**: Only `.lean` files in `GoedelsPoetryLib/<category>/.../<filename>.lean` pattern are allowed (when adding theorem files)
-   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`)
+   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
    - Maintenance/workflow changes can modify any files
    - Supports nested subdirectories: `GoedelsPoetryLib/Logic/SetTheory/Commutativity.lean`
    - Prevents files in unauthorized locations in theorem PRs
@@ -89,7 +89,7 @@ When a PR is created, the following security and validation checks are performed
      - `GoedelsPoetryLib/Init.lean` - Root Init.lean (manually maintained)
 
 4. **One file per PR validation**: Each PR must add exactly one new theorem file (when adding theorem files)
-   - Only enforced when PRs add new theorem files
+   - Only enforced when PRs add new theorem files (excludes `Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
    - Maintenance/workflow changes can modify multiple files
    - Prevents batch additions that could bypass validation
    - Ensures focused, reviewable changes for theorem additions
@@ -107,6 +107,7 @@ When a PR is created, the following security and validation checks are performed
    - No theorem files were deleted
    - No new files overwrite existing files
    - Requires `origin/main` to be fetched (handled automatically by CI; CLI contributors fetch programmatically)
+   - Excludes infrastructure files (`Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`) from theorem-file detection
 
 8. **Init regeneration**: `regenerate_init.py` updates subdirectory `Init.lean` files
 
