@@ -41,8 +41,12 @@ jobs:
         # Maintenance/workflow changes can use any branch name
         run: |
           branch_name="${{ github.head_ref }}"
-          # Check if any theorem files (non-Init.lean, non-GoedelsPoetryLib.lean) are being added
-          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null | grep -v "Init.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
+          # Check if any theorem files (non-Init.lean, non-root infrastructure files) are being added
+          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null \
+            | grep -v "Init.lean$" \
+            | grep -v "^GoedelsPoetryLib\\.lean$" \
+            | grep -v "^Tests\\.lean$" \
+            | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
           
           if [ -n "$new_theorem_files" ]; then
             # If adding theorem files, branch name must follow pattern
@@ -68,8 +72,12 @@ jobs:
             exit 0
           fi
           
-          # Check if any theorem files (non-Init.lean, non-GoedelsPoetryLib.lean) are being added
-          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null | grep -v "Init.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
+          # Check if any theorem files (non-Init.lean, non-root infrastructure files) are being added
+          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null \
+            | grep -v "Init.lean$" \
+            | grep -v "^GoedelsPoetryLib\\.lean$" \
+            | grep -v "^Tests\\.lean$" \
+            | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
           
           if [ -z "$new_theorem_files" ]; then
             # No theorem files being added, skip strict file path validation (maintenance mode)
@@ -110,8 +118,12 @@ jobs:
             exit 0
           fi
           
-          # Check if any theorem files (non-Init.lean, non-GoedelsPoetryLib.lean) are being added
-          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null | grep -v "Init.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
+          # Check if any theorem files (non-Init.lean, non-root infrastructure files) are being added
+          new_theorem_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null \
+            | grep -v "Init.lean$" \
+            | grep -v "^GoedelsPoetryLib\\.lean$" \
+            | grep -v "^Tests\\.lean$" \
+            | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
           
           if [ -z "$new_theorem_files" ]; then
             # No theorem files being added, skip critical file protection (maintenance mode)
@@ -148,7 +160,11 @@ jobs:
         # Only enforce one-file-per-PR when adding theorem files
         # Maintenance/workflow changes can modify multiple files
         run: |
-          new_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null | grep -v "Init.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
+          new_files=$(git diff --name-only --diff-filter=A origin/main -- "*.lean" 2>/dev/null \
+            | grep -v "Init.lean$" \
+            | grep -v "^GoedelsPoetryLib\\.lean$" \
+            | grep -v "^Tests\\.lean$" \
+            | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || echo "")
           
           if [ -z "$new_files" ]; then
             # No theorem files being added, skip one-file validation (maintenance mode)
