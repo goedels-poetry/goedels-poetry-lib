@@ -10,7 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: leanprover/lean-action@v1
         with:
-          lake-build: true
-      - run: scripts/check_append_only.sh
+          fetch-depth: 0
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.elan/bin:$PATH"
+      - name: Setup Lean toolchain
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install $(cat lean-toolchain)
+          elan default $(cat lean-toolchain)
+      - name: Setup Lake dependencies
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          lake update
+      - name: Build
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          lake build
+      - name: Append-only check (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main
+          bash scripts/check_append_only.sh

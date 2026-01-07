@@ -63,24 +63,64 @@ The root `GoedelsPoetryLib/Init.lean` file is **manually maintained**. It:
 
 ## CI Process
 
-When a PR is created:
+When a PR is created, the following security and validation checks are performed:
 
-1. **Build**: `lake build` compiles the main library
-2. **Test**: `lake build Tests` compiles the test suite
-3. **Append-only check**: `check_append_only.sh` validates:
+1. **Branch name validation**: Branch name must start with `add-theorem-` when adding theorem files
+   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`, root infrastructure entrypoints `GoedelsPoetryLib.lean` and `Tests.lean`, and `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
+   - Maintenance/workflow changes can use any branch name
+   - Prevents arbitrary branch names for theorem additions
+   - Ensures branches follow expected naming convention for automated PRs
+
+2. **File path validation**: Only `.lean` files in `GoedelsPoetryLib/<category>/.../<filename>.lean` pattern are allowed (when adding theorem files)
+   - Only enforced when PRs add new theorem files (`.lean` files excluding `Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
+   - Maintenance/workflow changes can modify any files
+   - Supports nested subdirectories: `GoedelsPoetryLib/Logic/SetTheory/Commutativity.lean`
+   - Prevents files in unauthorized locations in theorem PRs
+   - Blocks non-.lean files from being added in theorem PRs
+
+3. **Critical file protection**: Modifications to protected files/directories are blocked (when adding theorem files)
+   - Only enforced when PRs add new theorem files
+   - Maintenance/workflow changes can modify protected files
+   - Protected files/directories:
+     - `scripts/` - Scripts directory
+     - `.github/` - CI configuration
+     - `lakefile.lean`, `lean-toolchain`, `.gitignore` - Build configuration
+     - `README.md`, `CONTRIBUTING.md`, `LICENSE` - Documentation
+     - `GoedelsPoetryLib/Init.lean` - Root Init.lean (manually maintained)
+
+4. **One file per PR validation**: Each PR must add exactly one new theorem file (when adding theorem files)
+   - Only enforced when PRs add new theorem files (excludes `Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`)
+   - Maintenance/workflow changes can modify multiple files
+   - Prevents batch additions that could bypass validation
+   - Ensures focused, reviewable changes for theorem additions
+
+5. **Build**: `lake build` compiles the main library
+   - Validates that the new theorem file has correct Lean syntax
+   - Catches compilation errors early
+
+6. **Test**: `lake build Tests` compiles the test suite
+   - Ensures the new theorem doesn't break existing tests
+   - Verifies the import chain is intact
+
+7. **Append-only check**: `check_append_only.sh` validates:
    - No theorem files were modified
    - No theorem files were deleted
    - No new files overwrite existing files
    - Requires `origin/main` to be fetched (handled automatically by CI; CLI contributors fetch programmatically)
-4. **Init regeneration**: `regenerate_init.py` updates subdirectory `Init.lean` files
-5. **Init commit**: Generated `Init.lean` files are committed and pushed to the PR branch
+   - Excludes infrastructure files (`Init.lean`, `GoedelsPoetryLib.lean`, `Tests.lean`, `GoedelsPoetryLib/GoedelsPoetryLib.lean`) from theorem-file detection
+
+8. **Init regeneration**: `regenerate_init.py` updates subdirectory `Init.lean` files
+
+9. **Init commit**: Generated `Init.lean` files are committed and pushed to the PR branch
    - **Critical**: If the push fails, the PR will fail validation
    - This ensures the repository never enters an invalid state (theorem added without corresponding `Init.lean` update)
    - Since PRs come from branches (not forks) created by the CLI, write permissions are available
-6. **Validation**: `lake build` and `lake build Tests` are run again to validate that the regenerated `Init.lean` files compile correctly
-   - This ensures the generated `Init.lean` files are syntactically correct and all imports are valid
-   - If validation fails, the PR will not merge
-7. **Clean check**: Verifies no unexpected changes were made (excluding `Init.lean` files)
+
+10. **Validation**: `lake build` and `lake build Tests` are run again to validate that the regenerated `Init.lean` files compile correctly
+    - This ensures the generated `Init.lean` files are syntactically correct and all imports are valid
+    - If validation fails, the PR will not merge
+
+11. **Clean check**: Verifies no unexpected changes were made (excluding `Init.lean` files)
 
 If all checks pass and the PR is from a bot, it is automatically merged.
 

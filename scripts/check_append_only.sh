@@ -18,7 +18,7 @@ if [ $git_diff_exit -ne 0 ]; then
   echo "ERROR: Failed to check for deleted files"
   exit 1
 fi
-deleted_files=$(echo "$git_diff_output" | grep -v "Init.lean$" || true)
+deleted_files=$(echo "$git_diff_output" | grep -v "Init.lean$" | grep -v "^GoedelsPoetryLib\\.lean$" | grep -v "^Tests\\.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || true)
 if [ -n "$deleted_files" ]; then
   echo "ERROR: deleted theorem files detected:"
   echo "$deleted_files"
@@ -35,7 +35,7 @@ if [ $git_diff_exit -ne 0 ]; then
   echo "ERROR: Failed to check for modified files"
   exit 1
 fi
-modified_files=$(echo "$git_diff_output" | grep -v "Init.lean$" || true)
+modified_files=$(echo "$git_diff_output" | grep -v "Init.lean$" | grep -v "^GoedelsPoetryLib\\.lean$" | grep -v "^Tests\\.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || true)
 if [ -n "$modified_files" ]; then
   echo "ERROR: modified theorem files detected:"
   echo "$modified_files"
@@ -52,7 +52,7 @@ if [ $git_diff_exit -ne 0 ]; then
   echo "ERROR: Failed to check for added files"
   exit 1
 fi
-added_files=$(echo "$git_diff_output" | grep -v "Init.lean$" || true)
+added_files=$(echo "$git_diff_output" | grep -v "Init.lean$" | grep -v "^GoedelsPoetryLib\\.lean$" | grep -v "^Tests\\.lean$" | grep -v "GoedelsPoetryLib/GoedelsPoetryLib.lean$" || true)
 
 if [ -n "$added_files" ]; then
   for f in $added_files; do
