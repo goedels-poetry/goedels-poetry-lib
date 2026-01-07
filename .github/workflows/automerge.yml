@@ -130,6 +130,7 @@ jobs:
             "CONTRIBUTING.md"
             "LICENSE"
             "GoedelsPoetryLib/Init.lean"
+            "GoedelsPoetryLib/GoedelsPoetryLib.lean"
           )
           
           for file in $changed_files; do
