@@ -16,9 +16,25 @@ jobs:
           fetch-depth: 0
 
       - name: Install elan
-        uses: leanprover/lean-action@v1
-        with:
-          build: false
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+          # Make elan available in this step
+          export PATH="$HOME/.elan/bin:$PATH"
+
+      - name: Setup Lean toolchain
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          elan toolchain install $(cat lean-toolchain)
+          elan default $(cat lean-toolchain)
+
+      - name: Fetch origin/main for validation
+        run: git fetch origin main
+
+      - name: Setup Lake dependencies
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          lake update
 
       - name: Validate branch name
         # Only enforce branch name pattern when adding theorem files
@@ -151,13 +167,14 @@ jobs:
           echo "Validated: PR adds exactly one theorem file"
 
       - name: Lake build
-        run: lake build
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          lake build
 
       - name: Lake build tests
-        run: lake build Tests
-
-      - name: Fetch origin/main for append-only check
-        run: git fetch origin main
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          lake build Tests
 
       - name: Append-only check
         run: bash scripts/check_append_only.sh
@@ -185,6 +202,7 @@ jobs:
       - name: Validate regenerated Init.lean files compile
         # Rebuild after Init.lean regeneration to ensure generated files are valid
         run: |
+          export PATH="$HOME/.elan/bin:$PATH"
           lake build
           lake build Tests
 
